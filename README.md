@@ -1,4 +1,4 @@
-# Custom Code Language
+# Custom Code Languages
 
 Provides slash commands to add custom languages (syntax highlighting) to the codeblocks shown in chat messages.
 
