@@ -1,6 +1,9 @@
 import { reloadCurrentChat, saveSettingsDebounced } from '../../../../script.js';
 import { extension_settings } from '../../../extensions.js';
 import { registerSlashCommand } from '../../../slash-commands.js';
+import { SlashCommand } from '../../../slash-commands/SlashCommand.js';
+import { ARGUMENT_TYPE, SlashCommandArgument, SlashCommandNamedArgument } from '../../../slash-commands/SlashCommandArgument.js';
+import { SlashCommandParser } from '../../../slash-commands/SlashCommandParser.js';
 import { isTrueBoolean } from '../../../utils.js';
 
 
@@ -30,8 +33,8 @@ const registerLanguage = (lang)=>{
 };
 
 
-registerSlashCommand('ccl',
-    (args, value)=>{
+SlashCommandParser.addCommandObject(SlashCommand.fromProps({ name: 'ccl',
+    callback: (args, value)=>{
         let lang = settings.languageList.find(it=>it.name.toLowerCase() == args.name.toLowerCase());
         if (!lang) {
             lang = new Language();
@@ -46,26 +49,46 @@ registerSlashCommand('ccl',
         saveSettingsDebounced();
         reloadCurrentChat();
     },
-    [],
-    '<span class="monospace">[name=langName] [optional case=true|false] [optional strings=true|false] (["keywords", "for", "the", "language"])</span> – Register a new language (or update an existing one) for codeblocks in chat. <code>case=true</code> to make it case-sensitive. <code>strings=true</code> to highlight quoted text.',
-    true,
-    true,
-);
+    namedArgumentList: [
+        SlashCommandNamedArgument.fromProps({ name: 'name',
+            description: 'name of the language',
+            typeList: [ARGUMENT_TYPE.STRING],
+            isRequired: true,
+        }),
+        SlashCommandNamedArgument.fromProps({ name: 'case',
+            description: 'whether the keywords are case sensitive or not',
+            typeList: [ARGUMENT_TYPE.BOOLEAN],
+            defaultValue: 'true',
+            enumList: ['true', 'false'],
+        }),
+        SlashCommandNamedArgument.fromProps({ name: 'strings',
+            description: 'whether to highlight quoted text',
+            typeList: [ARGUMENT_TYPE.BOOLEAN],
+            defaultValue: 'true',
+            enumList: ['true', 'false'],
+        }),
+    ],
+    unnamedArgumentList: [
+        SlashCommandArgument.fromProps({ description: 'list of keywords to be highlighted',
+            typeList: [ARGUMENT_TYPE.LIST],
+            isRequired: true,
+        }),
+    ],
+    helpString: 'Register a new language (or update an existing one) for codeblocks in chat. <code>case=true</code> to make it case-sensitive. <code>strings=true</code> to highlight quoted text.',
+}));
 
-registerSlashCommand('ccl-list',
-    (args, value)=>{
+SlashCommandParser.addCommandObject(SlashCommand.fromProps({ name: 'ccl-list',
+    callback: (args, value)=>{
         console.log(settings.languageList);
         toastr.info(JSON.stringify(settings.languageList.map(it=>it.name)));
         return JSON.stringify(settings.languageList);
     },
-    [],
-    '<span class="monospace"></span> – Output a list of all custom languages.',
-    true,
-    true,
-);
+    helpString: 'Output a list of all custom languages.',
+    returns: 'list of custom languages',
+}));
 
-registerSlashCommand('ccl-remove',
-    (args, value)=>{
+SlashCommandParser.addCommandObject(SlashCommand.fromProps({ name: 'ccl-remove',
+    callback: (args, value)=>{
         const idx = settings.languageList.findIndex(it=>it.name.toLowerCase() == value.toLowerCase());
         if (idx != -1) {
             hljs.unregisterLanguage(settings.languageList[idx].name);
@@ -74,11 +97,14 @@ registerSlashCommand('ccl-remove',
             reloadCurrentChat();
         }
     },
-    [],
-    '<span class="monospace">(langName)</span> – Delete a custom language.',
-    true,
-    true,
-);
+    unnamedArgumentList: [
+        SlashCommandArgument.fromProps({ description: 'name of the language to remove',
+            typeList: [ARGUMENT_TYPE.STRING],
+            isRequired: true,
+        }),
+    ],
+    helpString: 'Delete a custom language.',
+}));
 
 
 
